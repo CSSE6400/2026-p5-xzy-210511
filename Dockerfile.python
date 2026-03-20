@@ -1,0 +1,32 @@
+# Version of Dockerfile to match the 2025 version of the week 3 Dockerfile.
+# This uses the Python starter image, rather than Ubuntu.
+# It is substantially larger, but avoids issues of installing poetry on Ubuntu 24.
+
+FROM python:latest
+
+ENV SQLALCHEMY_DATABASE_URI=sqlite:///:memory:
+
+# Installing dependencies for running a python application
+RUN apt-get update && \
+        apt-get install -y pipx postgresql-client libpq-dev libcurl4-openssl-dev libssl-dev && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*
+RUN pipx ensurepath
+
+# Install poetry
+RUN pipx install poetry
+
+# Setting the working directory
+WORKDIR /app
+
+# Install poetry dependencies
+COPY pyproject.toml .
+RUN pipx run poetry install --no-root
+
+# Copying our application into the container
+COPY bin bin
+COPY todo todo
+
+# Running our application
+ENTRYPOINT ["/app/bin/docker-entrypoint"]
+CMD ["serve"]
